@@ -119,7 +119,7 @@ int main () {
 	ofstream img ("toto.ppm");
 	// P3 signifie : les pixels un par un en ascii
 	img << "P3" << endl; // ascii format, colors
-	// largeur hauteur
+	// largeur hauteur valeur max d'une couleur (=255 un char)
 	img << scene.getWidth()  << "\n"<< scene.getHeight() << "\n" << "255" << endl;
 	// tous les pixels au format RGB
 	for (int  y = 0 ; y < scene.getHeight() ; y++) {
