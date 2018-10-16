@@ -101,7 +101,7 @@ int main () {
 				// eclairage total
 				finalcolor = finalcolor * dt + finalcolor * 0.2; // *0.2 = lumiere speculaire ambiante
 
-				// le point de l'ecran en coordonnees 3D
+				// le point de l'image (pixel) dont on vient de calculer la couleur
 				Color & pixel = pixels[y*scene.getHeight() + x];
 				// mettre a jour la couleur du pixel dans l'image finale.
 				pixel = finalcolor;
