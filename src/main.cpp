@@ -30,7 +30,7 @@ int main () {
 		// position autour de l'angle de la camera
 		// rayon entre 3 et 33, couleur aleatoire
 		// distrib(re) rend un entier aleatoire extrait de re
-		scene.add(Sphere({50+distribd(re),50 + distribd(re),40 + distribd(re) }, double(distrib(re)%30) + 3.0, Color::random()));
+		scene.add(Sphere({50+distribd(re),50 + distribd(re),120 + distribd(re) }, double(distrib(re)%30) + 3.0, Color::random()));
 	}
 	// quelques spheres de plus pour ajouter du gout a la scene
 	scene.add(Sphere({50,50,40},15.0,Color::red));
@@ -41,7 +41,7 @@ int main () {
 	// lumieres 
 	vector<Vec3D> lights;
 	lights.reserve(3);
-	lights.emplace_back(Vec3D(50, 50, -20));
+	lights.emplace_back(Vec3D(50, 50, -50));
 	lights.emplace_back(Vec3D(50, 50, 120));
 	lights.emplace_back(Vec3D(200, 0, 120));
 
