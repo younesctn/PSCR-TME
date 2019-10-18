@@ -18,7 +18,7 @@ public:
 	Sphere(const Vec3D & centre={0,0,0}, double rayon=10.0, const Color & c=Color::white):centre(centre),rayon(rayon),color(c) {}
 
 	// return distance to closest intersection with the given object
-	float instersects (Rayon ray) const {
+	float intersects (Rayon ray) const {
 		// trouver vecteur unitaire l donnant la direction
 		Vec3D l = (ray.dest - ray.ori).normalize();
 		// trouver le vector liant le centre de la sphere a l'obs
