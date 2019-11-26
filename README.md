@@ -1,2 +1,3 @@
-# TME6
-TME 6
+# TME7
+
+Comme au tme précédent, faites un fork de ce projet, puis travailler dans votre copie.
