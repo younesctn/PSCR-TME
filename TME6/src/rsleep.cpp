@@ -11,6 +11,11 @@ void randsleep() {
   tosleep.tv_nsec = 300000000 + ratio*700000000;
   struct timespec remain;
   while ( nanosleep(&tosleep, &remain) != 0) {
+    /*
+     tant qu'on sleep pas jusqu'au bout on fait boucle, on fait ça car nanosleep peut se faire interrompre par les signaux.
+     Or durant l'attaque on veut se faire signaler pour prendre des dégats mais pas forcement ce reveiller.
+     On quitte la boucle quand le temps restant = 0   
+     */
     tosleep = remain;
   }
 }
