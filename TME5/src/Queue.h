@@ -14,6 +14,7 @@ class Queue {
 	size_t begin;
 	size_t sz;
 	mutable std::mutex m;
+	std::condition_variable cv;
 
 	// fonctions private, sans protection mutex
 	bool empty() const {
@@ -33,8 +34,11 @@ public:
 	}
 	T* pop() {
 		std::unique_lock<std::mutex> lg(m);
-		if (empty()) {
-			return nullptr;
+		while (empty()) {
+			cv.wait(lg);
+		}
+		if (full()) {
+			cv.notify_all();
 		}
 		auto ret = tab[begin];
 		tab[begin] = nullptr;
@@ -44,8 +48,11 @@ public:
 	}
 	bool push(T* elt) {
 		std::unique_lock<std::mutex> lg(m);
-		if (full()) {
-			return false;
+		while (full()) {
+			cv.wait(lg);
+		}
+		if (empty()){
+			cv.notify_all();
 		}
 		tab[(begin + sz) % allocsize] = elt;
 		sz++;
