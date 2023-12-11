@@ -118,7 +118,7 @@ int main () {
 	// remplir avec un peu d'aléatoire
 	fillScene(scene, re);
 
-    const int NB_THREAD = 4; //nombre de thread
+    const int NB_THREAD = 8; //nombre de thread
     const int NBJOB = scene.getWidth() * scene.getHeight();
 	
 	// lumieres 
