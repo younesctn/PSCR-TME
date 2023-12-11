@@ -2,6 +2,10 @@
 #include "Rayon.h"
 #include "Scene.h"
 #include <iostream>
+#include "Pool.h"
+#include "Barier.h"
+#include "Job.h"
+#include "Pool.h"
 #include <algorithm>
 #include <fstream>
 #include <limits>
@@ -18,6 +22,9 @@ void fillScene(Scene & scene, default_random_engine & re) {
 	// on remplit la scene de spheres colorees de taille position et couleur aleatoire
 	uniform_int_distribution<int> distrib(0, 200);
 	uniform_real_distribution<double> distribd(-200, 200);
+
+    Pool pool(NBSPHERES); //Rajout d'un pool de thread
+
 	for (int i = 0; i < NBSPHERES; i++) {
 		// position autour de l'angle de la camera
 		// rayon entre 3 et 33, couleur aleatoire
@@ -25,10 +32,11 @@ void fillScene(Scene & scene, default_random_engine & re) {
 		scene.add(Sphere({50+distribd(re),50 + distribd(re),120 + distribd(re) }, double(distrib(re)%30) + 3.0, Color::random()));
 	}
 	// quelques spheres de plus pour ajouter du gout a la scene
-	scene.add(Sphere({50,50,40},15.0,Color::red));
+	scene.add(Sphere({50,50,40},15.0, Color::red));
 	scene.add(Sphere({100,20,50},55.0,Color::blue));
 
 }
+
 
 // return the index of the closest object in the scene that intersects "ray"
 // or -1 if the ray does not intersect any object.
@@ -47,8 +55,7 @@ int findClosestInter(const Scene & scene, const Rayon & ray) {
 		index++;
 	}
 	return targetSphere;
-}
-
+};
 // Calcule l'angle d'incidence du rayon à la sphere, cumule l'éclairage des lumières
 // En déduit la couleur d'un pixel de l'écran.
 Color computeColor(const Sphere & obj, const Rayon & ray, const Vec3D & camera, std::vector<Vec3D> & lights) {
@@ -77,7 +84,7 @@ Color computeColor(const Sphere & obj, const Rayon & ray, const Vec3D & camera, 
 	finalcolor = finalcolor * dt + finalcolor * 0.2; // *0.2 = lumiere speculaire ambiante
 
 	return finalcolor;
-}
+};
 
 // produit une image dans path, représentant les pixels.
 void exportImage(const char * path, size_t width, size_t height, Color * pixels) {
@@ -98,11 +105,11 @@ void exportImage(const char * path, size_t width, size_t height, Color * pixels)
 	img.close();
 }
 
+
 // NB : en francais pour le cours, preferez coder en english toujours.
 // pas d'accents pour eviter les soucis d'encodage
 
 int main () {
-
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	// on pose une graine basee sur la date
 	default_random_engine re(std::chrono::system_clock::now().time_since_epoch().count());
@@ -110,6 +117,9 @@ int main () {
 	Scene scene (1000,1000);
 	// remplir avec un peu d'aléatoire
 	fillScene(scene, re);
+
+    const int NB_THREAD = 4; //nombre de thread
+    const int NBJOB = scene.getWidth() * scene.getHeight();
 	
 	// lumieres 
 	vector<Vec3D> lights;
@@ -120,37 +130,20 @@ int main () {
 
 	// les points de l'ecran, en coordonnées 3D, au sein de la Scene.
 	// on tire un rayon de l'observateur vers chacun de ces points
-	const Scene::screen_t & screen = scene.getScreenPoints();
 
 	// Les couleurs des pixels dans l'image finale
 	Color * pixels = new Color[scene.getWidth() * scene.getHeight()];
 
-	// pour chaque pixel, calculer sa couleur
-	for (int x =0 ; x < scene.getWidth() ; x++) {
+    Pool pool(NBJOB);
+    pool.start(NB_THREAD);
+    Barrier b(NBJOB);
+
+    for (int x =0 ;	 x < scene.getWidth() ; x++) {
 		for (int  y = 0 ; y < scene.getHeight() ; y++) {
-			// le point de l'ecran par lequel passe ce rayon
-			auto & screenPoint = screen[y][x];
-			// le rayon a inspecter
-			Rayon  ray(scene.getCameraPos(), screenPoint);
-
-			int targetSphere = findClosestInter(scene, ray);
-
-			if (targetSphere == -1) {
-				// keep background color
-				continue ;
-			} else {
-				const Sphere & obj = *(scene.begin() + targetSphere);
-				// pixel prend la couleur de l'objet
-				Color finalcolor = computeColor(obj, ray, scene.getCameraPos(), lights);
-				// le point de l'image (pixel) dont on vient de calculer la couleur
-				Color & pixel = pixels[y*scene.getHeight() + x];
-				// mettre a jour la couleur du pixel dans l'image finale.
-				pixel = finalcolor;
-			}
-
-		}
-	}
-
+            pool.submit((Job *) new DrawPixelJob(scene, lights, pixels, x, y, b));
+        }
+    }
+	b.waitFor();
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	    std::cout << "Total time "
 	              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
@@ -160,4 +153,3 @@ int main () {
 
 	return 0;
 }
-

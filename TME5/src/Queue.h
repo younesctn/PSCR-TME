@@ -2,7 +2,9 @@
 #define SRC_QUEUE_H_
 
 #include <cstdlib>
+#include <condition_variable>
 #include <mutex>
+#include <cstring>
 
 namespace pr {
 
@@ -14,6 +16,7 @@ class Queue {
 	size_t begin;
 	size_t sz;
 	mutable std::mutex m;
+	bool isBlocking = false;
 	std::condition_variable cv;
 
 	// fonctions private, sans protection mutex
@@ -26,7 +29,7 @@ class Queue {
 public:
 	Queue(size_t size) :allocsize(size), begin(0), sz(0) {
 		tab = new T*[size];
-		memset(tab, 0, size * sizeof(T*));
+		std::memset(tab, 0, size * sizeof(T*));
 	}
 	size_t size() const {
 		std::unique_lock<std::mutex> lg(m);
@@ -34,8 +37,11 @@ public:
 	}
 	T* pop() {
 		std::unique_lock<std::mutex> lg(m);
-		while (empty()) {
+		while (empty() && isBlocking) {
 			cv.wait(lg);
+		}
+		if (empty()) {
+			return nullptr;
 		}
 		if (full()) {
 			cv.notify_all();
@@ -48,16 +54,27 @@ public:
 	}
 	bool push(T* elt) {
 		std::unique_lock<std::mutex> lg(m);
-		while (full()) {
+		while (full() && isBlocking) {
 			cv.wait(lg);
 		}
-		if (empty()){
+		if (full()) {
+			return false;
+		}
+		if (empty()) {
 			cv.notify_all();
 		}
 		tab[(begin + sz) % allocsize] = elt;
 		sz++;
 		return true;
 	}
+	void setBlocking(bool b){
+		std::unique_lock<std::mutex> lg(m);
+		this->isBlocking = b;
+		if (isBlocking == false) {
+			cv.notify_all();
+		}
+	}
+	
 	~Queue() {
 		// ?? lock a priori inutile, ne pas detruire si on travaille encore avec
 		for (size_t i = 0; i < sz; i++) {
