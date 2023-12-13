@@ -6,7 +6,7 @@
 int main () {
 
 	std::string abc = "abc";
-	char * str = new char [3];
+	char* str = new char[3];
 	str[0] = 'a';
 	str[1] = 'b';
 	str[2] = 'c';
@@ -33,6 +33,8 @@ int main () {
 		delete cp;
 	}
 	// et la chaine elle meme
-	delete str;
+	delete [] str;
+
+	return 0;
 
 }
